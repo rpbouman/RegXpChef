@@ -1,0 +1,39 @@
+{
+  "name": "regxpchef",
+  "version": "0.0.1",
+  "description": "Declarative regular expression builder for tokenizers, parsers, and syntax highlighters",
+  "main": "src/RegXpChef.js",
+  "types": "src/RegXpChef.d.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rpbouman/RegXpChef.git"
+  },
+  "keywords": [
+    "regex",
+    "regexp",
+    "regular-expression",
+    "tokenizer",
+    "lexer",
+    "syntax-highlighter",
+  ],
+  "author": "Roland Bouman <Roland.Bouman@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rpbouman/RegXpChef/issues"
+  },
+  "homepage": "https://github.com/rpbouman/RegXpChef#readme",
+  "devDependencies": {
+    "jest": "^30.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
