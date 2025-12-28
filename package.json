@@ -22,7 +22,7 @@
     "regular-expression",
     "tokenizer",
     "lexer",
-    "syntax-highlighter",
+    "syntax-highlighter"
   ],
   "author": "Roland Bouman <Roland.Bouman@gmail.com>",
   "license": "MIT",
