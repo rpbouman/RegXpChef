@@ -121,4 +121,47 @@ describe('trie optimization for string arrays', () => {
     expect(sample.match(regex)).toEqual(expectedMatches);
   });
 
+
+  /**
+   * WORKFLOW: Sample text with nested prefixes.
+   */
+  const sampleText = "apple app apply";
+  const expectedMatches = ["apple", "app", "apply"];
+
+  /**
+   * WORKFLOW: Reference Regex.
+   * A perfect Trie-based regex for these would be: app(?:l(?:e|y))?
+   */
+  const referencePattern = "app(?:l(?:e|y))?";
+
+  test('INTERNAL: Verify reference regex correctly matches all terms', () => {
+    const internalRegex = new RegExp(referencePattern, 'g');
+    const matches = sampleText.match(internalRegex);
+    expect(matches).toEqual(expectedMatches);
+  });
+
+  test('RegXpChef should generate factored Trie syntax for prefixes', () => {
+    const input = ["app", "apple", "apply"];
+    const result = RegXpChef.assemble(input);
+
+    // Verify factoring: 'app' should only appear once at the start
+    expect(result.source.startsWith('app')).toBe(true);
+    
+    // Verify nesting: It should use non-capturing groups for the branches
+    expect(result.source).toContain('(?:');
+    
+    // Verify terminal handling: The base 'app' should be made optional via '?'
+    expect(result.source.endsWith(')?')).toBe(true);
+  });
+
+  test('Generated Trie regex matches sample text without "short-circuiting"', () => {
+    const regex = RegXpChef.compile(["app", "apple", "apply"]);
+    const globalRegex = new RegExp(regex.source, 'g');
+    
+    const matches = sampleText.match(globalRegex);
+    
+    // This proves the Trie logic avoids the "can vs cannot" short-circuit
+    expect(matches).toEqual(expectedMatches);
+  });
+
 });

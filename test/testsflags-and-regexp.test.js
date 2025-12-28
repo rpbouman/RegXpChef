@@ -18,7 +18,7 @@ describe('regexp arguments and local flag handling', () => {
     // 5. RegXpChef configuration
     const config = {
       $flags: 'gi',
-      $content: /a/i
+      $content: 'a'
     };
 
     // 6. Syntax verification
