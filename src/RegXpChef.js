@@ -55,8 +55,8 @@ class RegXpChef {
     return source;
   }
   
-  static escape(literal){
-    return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  static escape(source){
+    return String(source).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
   
   static #modFlags(flags, arg){
@@ -244,27 +244,28 @@ class RegXpChef {
     }
 
     if (end.pattern) {
-      let quantifier;
-      if (object.$content instanceof Array){
-        quantifier = '';
-      }
-      else {
-        content = `(?!${RegXpChef.#wrap(end.pattern)})${RegXpChef.#wrap(content)}`;
-        quantifier = RegXpChef.#getQuantifier(object);
-      }
-
-      if (object.$escape) {
+      let endLookAhead = RegXpChef.#wrap(end.pattern);
+      let escapedEnd = '';
+      if (object.$escape){
         const escape = RegXpChef.#toPattern(object.$escape, flags);
-        content = `${RegXpChef.#wrap(escape)}${RegXpChef.#wrap(end.regExp)}|${content}`;
+        endLookAhead = `(?:${escape})?` + endLookAhead;
+        escapedEnd = RegXpChef.#wrap(`${escape}${end.pattern}`);
       }
-
-      content = RegXpChef.#wrap(content);
-      content += quantifier;
+      endLookAhead = `(?!${RegXpChef.#wrap(endLookAhead)})`;
+      content = `${escapedEnd}|${endLookAhead}${content}`;
     }
     else 
     if (object.$escape){
       throw new Error(`Invalid: $escape not allowed without $end.`);
     }
+
+    if (! (object.$content instanceof Array) ){
+      const quantifier = RegXpChef.#getQuantifier(object);
+      if (quantifier){
+        content = `(?:${content})${quantifier}`;
+      }
+    }
+
     const regExp = new RegExp(`${begin.regExp}${content}${end.regExp}`, object.$flags);
     return RegXpChef.#toPattern(regExp, flags);
   }
@@ -327,7 +328,7 @@ class RegXpChef {
     }
     const counts = Array.from(
       source.matchAll(/(?<!\\)\(\?<(?<name>[^>]+)>/g)
-    ).reduce((acc, match){
+    ).reduce((acc, match) => {
       const name = match.groups.name;
       acc[name] = acc[name] ? acc[name] + 1 : 1;
       return acc;
