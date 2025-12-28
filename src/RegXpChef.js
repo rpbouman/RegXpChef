@@ -174,12 +174,14 @@ class RegXpChef {
 
   static #getQuantifier(object){
     
-    const min = object.$min === undefined ? 0 : parseInt(object.$min, 10);
+    const defaultMin = object.$end === undefined ? 1 : 0;
+    const min = object.$min === undefined ? defaultMin : parseInt(object.$min, 10);
     if (isNaN(min) || min < 0 || typeof object.$min === 'number' && min !== object.$min){
       throw new Error(`Invalid: If specified, $min must be a non-negative integer.`);
     }
     
-    const max = [undefined, Infinity, '∞'].includes(object.$max) ? Infinity : parseInt(object.$max, 10);
+    const defaultMax = object.$end === undefined ? 1 : Infinity;
+    const max = object.$max === undefined ? defaultMax : ([Infinity, '∞'].includes(object.$max) ? Infinity : parseInt(object.$max, 10));
     if (isNaN(max) || max <= 0 || max < min || typeof object.$max === 'number' && max !== object.$max){
       throw new Error(`Invalid: If specified, $max must be an integer greater than 0 and not less than $min.`);
     }
@@ -243,6 +245,9 @@ class RegXpChef {
       content = RegXpChef.#toPattern(object.$content, flags);
     }
 
+    // TODO: special care when 
+    // $begin = $escape: prevent an escape from being read as begin. => negative lookbehind for $begin
+    // escape = end: prevent an escape from being read as end => negative lookahead for $end
     if (end.pattern) {
       let endLookAhead = RegXpChef.#wrap(end.pattern);
       let escapedEnd = '';
