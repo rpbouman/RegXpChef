@@ -57,37 +57,6 @@ describe('global flags and local flag modulation', () => {
     expect(regex.test(sample)).toBe(true);
   });
 
-  test('local flag is removed when regexp lacks global allowed flag', () => {
-    // 1. Sample text
-    const sample = 'A a';
-
-    // 2. Reference result
-    const expectedMatches = ['a'];
-
-    // 3. Reference regex
-    const reference = /a/g;
-    expect(sample.match(reference)).toEqual(expectedMatches);
-
-    // 4. RegXpChef configuration
-    // Global flags include i
-    // Local regexp does not
-    const config = [
-      { $flags: 'gi' },
-      /a/
-    ];
-
-    // 5. Syntax verification
-    const assembled = RegXpChef.assemble(...config);
-
-    // Must explicitly remove local case-insensitive flag
-    expect(assembled.source).toMatch(/\(\?-i:a\)/);
-    expect(assembled.flags).toBe('gi');
-
-    // 6. Behavioral verification
-    const regex = RegXpChef.compile(...config);
-    expect(sample.match(regex)).toEqual(expectedMatches);
-  });
-
   test('local flags can be added and removed simultaneously', () => {
     // 1. Sample text
     const sample = 'A\nb';

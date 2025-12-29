@@ -60,7 +60,7 @@ class RegXpChef {
   }
   
   static #modFlags(flags, arg){
-    if (arg.flags === undefined){
+    if (!arg.flags){
       return undefined;
     }
     const addFlags = [...arg.flags].filter(ch => flags.indexOf(ch) === -1);
