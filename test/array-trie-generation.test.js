@@ -253,4 +253,20 @@ describe('Array trie optimization', () => {
     expect('anything'.match(regex)).toBeNull();
   });
 
+  test('sql keywords', () => {
+    const config = {
+      $begin: /\b/,
+      $end: /\b/,
+      $content: [
+        "all","analyse","analyze","and","anti","any","array","as","asc","asof","asymmetric","at","authorization","between","bigint","binary","bit","boolean","both","by","case","cast","char","character","check","coalesce","collate","collation","column","columns","concurrently","constraint","create","cross","dec","decimal","default","deferrable","desc","describe","distinct","do","else","end","except","exists","extract","false","fetch","float","for","foreign","freeze","from","full","generated","glob","group","grouping","grouping_id","having","ilike","in","initially","inner","inout","int","integer","intersect","interval","into","is","isnull","join","lambda","lateral","leading","left","like","limit","map","national","natural","nchar","none","not","notnull","null","nullif","numeric","offset","on","only","or","order","out","outer","overlaps","overlay","pivot","pivot_longer","pivot_wider","placing","position","positional","precision","primary","qualify","real","references","returning","right","row","select","semi","setof","show","similar","smallint","some","struct","substring","summarize","symmetric","table","tablesample","then","time","timestamp","to","trailing","treat","trim","true","try_cast","union","unique","unpack","unpivot","using","values","varchar","variadic","verbose","when","where","window","with","xmlattributes","xmlconcat","xmlelement","xmlexists","xmlforest","xmlnamespaces","xmlparse","xmlpi","xmlroot","xmlserialize","xmltable"
+      ],
+      $flags: 'i'
+    };
+    const regExp = RegXpChef.compile({$flags:'sg'}, config);
+    const input = config.$content.join(' ');
+    const matches = Array.from(input.matchAll(regExp)).map(match => match[0]);
+    expect(matches).toEqual(config.$content);
+    
+  });
+
 });
