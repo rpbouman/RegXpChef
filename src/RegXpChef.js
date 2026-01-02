@@ -2,16 +2,22 @@ class RegXpChef {
 
   static #allowedLocalFlags = 'mis';
     
-  static #needWrap(source){
+  static #needWrap(source, forQuantifier){
     const groups = {
       '[': ']',
       '{': '}',
       '(': ')',
     };
-    let open, close, skip, level = 0;
+    let open, close, skip, level = 0, numElements = 0;
     for (const ch of source){
+      if (forQuantifier && numElements > 1){
+        return true;
+      }
       if (skip){
         skip = false;
+        if (!open) {
+          numElements++;
+        }
         continue;
       }
 
@@ -29,6 +35,7 @@ class RegXpChef {
             level--;
             if (!level){
               open = close = undefined;
+              numElements++;
             }
             continue;
         }
@@ -44,6 +51,10 @@ class RegXpChef {
       if (ch === '|'){
         return true;
       }
+      numElements++;
+    }
+    if (forQuantifier && numElements > 1){
+      return true;
     }
     return false;
   }
@@ -146,32 +157,6 @@ class RegXpChef {
     return source;
   }
 
-  static #getTerminal(object, flags, side){
-    let pattern, regExp = object[side];
-    if (regExp) {
-      pattern = RegXpChef.#toPattern(regExp, flags);
-      let prefix = '(?';
-      if (object[side + 'Exclusive'] === true) {
-        if (side === '$begin') {
-          prefix += '<';
-        }
-        prefix += '=';
-      }
-      else {
-        prefix += RegXpChef.#needWrap(pattern) ? ':' : '';
-      }
-      regExp = prefix === '(?' ? pattern : `${prefix}${pattern})`;
-    }
-    else {
-      regExp = '';
-    }
-    
-    return {
-      regExp: regExp,
-      pattern: pattern
-    };
-  }
-
   static #getQuantifier(object){
     
     const defaultMin = object.$end === undefined ? 1 : 0;
@@ -219,6 +204,49 @@ class RegXpChef {
     return quantifier;
   }
 
+  static #getTerminal(object, flags, side){
+    let pattern, regExp = object[side];
+    if (regExp) {
+      pattern = RegXpChef.#toPattern(regExp, flags);
+      let prefix = '(?';
+      if (object[side + 'Exclusive'] === true) {
+        if (side === '$begin') {
+          prefix += '<';
+        }
+        prefix += '=';
+      }
+      else {
+        prefix += RegXpChef.#needWrap(pattern) ? ':' : '';
+      }
+      regExp = prefix === '(?' ? pattern : `${prefix}${pattern})`;
+    }
+    else {
+      regExp = '';
+    }
+    
+    if (object.$escape){
+      const escapePattern = RegXpChef.#toPattern(object.$escape, flags);
+      if (escapePattern === pattern){
+        if (side === '$begin'){
+          regExp = `(?<!${escapePattern})${regExp}`;
+        }
+        else
+        if (side === '$end'){
+          regExp = `${regExp}(?!${escapePattern})`;
+        }
+      }
+      else 
+      if (side === '$end'){
+        regExp = `(?<!${escapePattern})${regExp}`;
+      }
+    }
+    
+    return {
+      regExp: regExp,
+      pattern: pattern
+    };
+  }
+
   static #fromObject(object, flags) {
     const begin = RegXpChef.#getTerminal(object, flags, '$begin');
     const end = RegXpChef.#getTerminal(object, flags, '$end');
@@ -245,19 +273,29 @@ class RegXpChef {
       content = RegXpChef.#toPattern(object.$content, flags);
     }
 
-    // TODO: special care when 
-    // $begin = $escape: prevent an escape from being read as begin. => negative lookbehind for $begin
-    // escape = end: prevent an escape from being read as end => negative lookahead for $end
+    let endRegExp = end.regExp;
     if (end.pattern) {
-      let endLookAhead = RegXpChef.#wrap(end.pattern);
-      let escapedEnd = '';
-      if (object.$escape){
-        const escape = RegXpChef.#toPattern(object.$escape, flags);
-        endLookAhead = `(?:${escape})?` + endLookAhead;
-        escapedEnd = RegXpChef.#wrap(`${escape}${end.pattern}`);
+      if (object.$content === undefined && typeof object.$end === 'string' && object.$end.length === 1){
+        let characterClass = end.pattern;
+        if (object.$escape && typeof object.$escape === 'string' && object.$escape.length === 1 && object.$escape !== object.$end){
+          characterClass += RegXpChef.#toPattern(object.$escape, flags);
+        }
+        content = `[^${characterClass}]`;
+        if (object.$escape !== object.$end){
+          endRegExp = end.pattern;
+        }
       }
-      endLookAhead = `(?!${RegXpChef.#wrap(endLookAhead)})`;
-      content = `${escapedEnd}|${endLookAhead}${content}`;
+      else
+      if (object.$content === undefined){
+        const endLookAhead = `(?!${end.pattern})`;
+        content = `${endLookAhead}${content}`;
+      }
+      
+      if (object.$escape){
+        const escapePattern = RegXpChef.#toPattern(object.$escape, flags);
+        const escapedEnd = `${RegXpChef.#wrap(escapePattern)}${RegXpChef.#wrap(end.pattern)}`;
+        content = RegXpChef.#wrap(`${escapedEnd}|${content}`);
+      }
     }
     else 
     if (object.$escape){
@@ -267,11 +305,14 @@ class RegXpChef {
     if (! (object.$content instanceof Array) ){
       const quantifier = RegXpChef.#getQuantifier(object);
       if (quantifier){
-        content = `(?:${content})${quantifier}`;
+        if (RegXpChef.#needWrap(content, true)){
+          content = `(?:${content})`;
+        }
+        content += quantifier;
       }
     }
 
-    const regExp = new RegExp(`${begin.regExp}${content}${end.regExp}`, object.$flags);
+    const regExp = new RegExp(`${begin.regExp}${content}${endRegExp}`, object.$flags);
     return RegXpChef.#toPattern(regExp, flags);
   }
   
