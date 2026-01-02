@@ -12,7 +12,8 @@
       "require": "./dist/RegXpChef.js",
       "default": "./dist/RegXpChef.js"
     }
-  },  
+  },
+  "unpkg": "./dist/RegXpChef.umd.js",
   "files": [
     "dist/",
     "README.md",
