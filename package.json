@@ -1,13 +1,25 @@
 {
-  "name": "regxpchef",
+  "name": "RegXpChef",
   "version": "0.0.1",
   "description": "Declarative regular expression builder for tokenizers, parsers, and syntax highlighters",
-  "main": "src/RegXpChef.js",
-  "types": "src/RegXpChef.d.ts",
+  "main": "./dist/RegXpChef.js",
+  "module": "./dist/RegXpChef.mjs",
+  "types": "./dist/RegXpChef.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/RegXpChef.d.ts",
+      "import": "./dist/RegXpChef.mjs",
+      "require": "./dist/RegXpChef.js",
+      "default": "./dist/RegXpChef.js"
+    }
+  },  
   "files": [
-    "src"
+    "dist/",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
+    "dist": "node ./scripts/build-esm.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -18,8 +30,12 @@
   },
   "keywords": [
     "regex",
+    "regex-builder",
     "regexp",
+    "regexp-builder",
     "regular-expression",
+    "regular-expression-builder",
+    "pattern-builder",
     "tokenizer",
     "lexer",
     "syntax-highlighter"
