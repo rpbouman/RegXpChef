@@ -125,33 +125,16 @@ class RegXpChef {
   static #fromTrie(tree){
     let source = '', count = 0;
     for (const ch in tree){
-      if (!ch ){
-        continue;
-      }
-      if (count) {
-        source += '|';
-      }
-      count++;
-      
+      if (!ch ) continue;
+      if (count++) source += '|';
       source += RegXpChef.escape(ch);
-
       const branch = tree[ch];
       const isTerminal = branch[''] === true;
       const keys = Object.keys(branch);
-      let numKeys = keys.length;
-      if (isTerminal){
-        numKeys -= 1;
-      }
-      if (!numKeys) {
-        continue;
-      }
+      if (keys.length === (isTerminal ? 1 : 0)) continue;
       let branchSource = RegXpChef.#fromTrie(branch);
-      if (keys.length > 1) {
-        branchSource = RegXpChef.#wrap(branchSource, true);
-      }
-      if (isTerminal){
-        branchSource += '?';
-      }
+      if (keys.length > 1) branchSource = RegXpChef.#wrap(branchSource, true);
+      if (isTerminal) branchSource += '?';
       source += branchSource;
     }
     return source;
@@ -294,7 +277,8 @@ class RegXpChef {
       if (object.$escape){
         const escapePattern = RegXpChef.#toPattern(object.$escape, flags);
         const escapedEnd = `${RegXpChef.#wrap(escapePattern)}${RegXpChef.#wrap(end.pattern)}`;
-        content = RegXpChef.#wrap(`${escapedEnd}|${content}`);
+        const escapedEscape = `${RegXpChef.#wrap(escapePattern)}${RegXpChef.#wrap(escapePattern)}`;
+        content = RegXpChef.#wrap(`${escapedEnd}|${escapedEscape}|${content}`);
       }
     }
     else 
