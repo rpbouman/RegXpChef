@@ -80,7 +80,7 @@ describe('trie optimization for string arrays', () => {
     expect(assembled.source).toMatch(/\?/);
 
     // Alternation must be grouped
-    expect(assembled.source).toMatch(/\(\?\:.*\|.*\)\?/);
+    expect(assembled.source).toBe('do[gt]?');
 
     // 7. Behavioral verification
     const regex = RegXpChef.compile(config);

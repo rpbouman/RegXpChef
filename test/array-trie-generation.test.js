@@ -10,7 +10,7 @@ describe('Array trie optimization', () => {
     const expectedMatches = ['cat', 'car', 'cap'];
 
     // 3. Reference regex - trie-optimized by hand
-    const reference = /\bca(?:t|r|p)\b/g;
+    const reference = /\bca[prt]\b/g;
 
     // 4. Verify reference regex works (sanity check)
     const referenceMatches = sample.match(reference);
@@ -37,7 +37,7 @@ describe('Array trie optimization', () => {
     expect(prefixCount).toBe(1);
     
     // Check 3: Should have grouping (characteristic of trie)
-    expect(assembled.source).toMatch(/ca\(\?:[trp]\|[trp]\|[trp]\)/);
+    expect(assembled.source).toBe('ca[prt]');
 
     // 7. Behavioral verification
     const regex = new RegExp(`\\b${assembled.source}\\b`, 'g');

@@ -208,5 +208,4 @@ describe('begin, end, and escape handling', () => {
     expect(sample.match(regex)).toBeNull();
   });
 
-
 });
