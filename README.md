@@ -1,5 +1,5 @@
 # RegXpChef
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rpbouman/RegXpChef)
 A declarative regular expression builder for tokenizers, parsers, and syntax highlighters.
 
 ## Installation
