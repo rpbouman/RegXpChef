@@ -1,0 +1,56 @@
+{
+  "name": "RegXpChef",
+  "version": "0.0.1",
+  "description": "Declarative regular expression builder for tokenizers, parsers, and syntax highlighters",
+  "main": "./dist/RegXpChef.js",
+  "module": "./dist/RegXpChef.mjs",
+  "types": "./dist/RegXpChef.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/RegXpChef.d.ts",
+      "import": "./dist/RegXpChef.mjs",
+      "require": "./dist/RegXpChef.js",
+      "default": "./dist/RegXpChef.js"
+    }
+  },
+  "unpkg": "./dist/RegXpChef.umd.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dist": "node ./scripts/build-esm.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rpbouman/RegXpChef.git"
+  },
+  "keywords": [
+    "regex",
+    "regex-builder",
+    "regexp",
+    "regexp-builder",
+    "regular-expression",
+    "regular-expression-builder",
+    "pattern-builder",
+    "tokenizer",
+    "lexer",
+    "syntax-highlighter"
+  ],
+  "author": "Roland Bouman <Roland.Bouman@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rpbouman/RegXpChef/issues"
+  },
+  "homepage": "https://github.com/rpbouman/RegXpChef#readme",
+  "devDependencies": {
+    "jest": "^30.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
