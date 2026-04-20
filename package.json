@@ -1,5 +1,5 @@
 {
-  "name": "RegXpChef",
+  "name": "regxpchef",
   "version": "0.0.1",
   "description": "Declarative regular expression builder for tokenizers, parsers, and syntax highlighters",
   "main": "./dist/RegXpChef.js",
