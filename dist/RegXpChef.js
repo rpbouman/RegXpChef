@@ -10,22 +10,16 @@ class RegXpChef {
     };
     let open, close, skip, level = 0, numElements = 0;
     for (const ch of source){
-      if (forQuantifier && numElements > 1){
-        return true;
-      }
+      if (forQuantifier && numElements > 1) return true;
       if (skip){
         skip = false;
-        if (!open) {
-          numElements++;
-        }
+        if (!open) numElements++;
         continue;
       }
-
       if (ch === '\\'){
         skip = true;
         continue;
       }
-
       if (open){
         switch (ch){
           case open:
@@ -48,21 +42,14 @@ class RegXpChef {
         continue;
       }
 
-      if (ch === '|'){
-        return true;
-      }
+      if (ch === '|') return true;
       numElements++;
     }
-    if (forQuantifier && numElements > 1){
-      return true;
-    }
-    return false;
+    return forQuantifier && numElements > 1;
   }
   
   static #wrap(source, force){
-    if (force || RegXpChef.#needWrap(source)){
-      source = `(?:${source})`;
-    }
+    if (force || RegXpChef.#needWrap(source)) source = `(?:${source})`;
     return source;
   }
   
@@ -71,50 +58,50 @@ class RegXpChef {
   }
   
   static #modFlags(flags, arg){
-    if (!arg.flags){
-      return undefined;
-    }
+    if (!arg.flags) return undefined;
+    
     const addFlags = [...arg.flags].filter(ch => flags.indexOf(ch) === -1);
     const omitFlags = [...flags].filter(ch => arg.flags.indexOf(ch) === -1);
-    if (!addFlags.length && !omitFlags.length) {
-      return undefined;
-    }
+    if (!addFlags.length && !omitFlags.length)  return undefined;
+    
     let fixAddFlags = [];
     addFlags.forEach(ch => {
-      if (RegXpChef.#allowedLocalFlags.indexOf(ch) !== -1){
-        fixAddFlags.push(ch);
-      }
+      if (RegXpChef.#allowedLocalFlags.indexOf(ch) !== -1) fixAddFlags.push(ch);
     });
 
     let fixOmitFlags = [];
     omitFlags.forEach(ch => {
-      if(RegXpChef.#allowedLocalFlags.indexOf(ch) !== -1) {
-        fixOmitFlags.push(ch);
-      }
+      if(RegXpChef.#allowedLocalFlags.indexOf(ch) !== -1) fixOmitFlags.push(ch);
     });
     
     let localFlags = fixAddFlags.join('');
-    if (fixOmitFlags.length){
-      localFlags += `-${fixOmitFlags.join('')}`;
-    }
+    if (fixOmitFlags.length) localFlags += `-${fixOmitFlags.join('')}`;
+    
     return localFlags;
   }
   
   static #fromArray(array, flags){
-    if (array.some(el => typeof el !== 'string')){
-      return array.map(el => RegXpChef.#toPattern(el, flags)).join('|');
-    }
-    else {
-      const trie = RegXpChef.#toTrie(array);
-      return RegXpChef.#fromTrie(trie);
-    }
+    if (array.some(el => typeof el !== 'string')) return array.map(el => RegXpChef.#toPattern(el, flags)).join('|');
+    const trie = RegXpChef.#toTrie(array, flags);
+    return RegXpChef.#fromTrie(trie);
   }
 
-  static #toTrie(array){
+  static #toTrie(array, flags){
+    const caseInsensitive = flags.includes('i');
+    array = [].concat(array).sort((a,b) => {
+      if (caseInsensitive){
+        a = a.toUpperCase();
+        b = b.toUpperCase();
+      }
+      if (a > b) return 1;
+      if (a < b) return -1;
+      return 0;
+    });
     let ch, branch, tree = {};
-    array.forEach(function(str){
+    array.forEach(str => {
       branch = tree;
-      for (ch of str){
+      for (ch of str) {
+        if (caseInsensitive) ch = ch.toLowerCase();
         branch = branch[ch] || (branch[ch] = {});
       }
       branch[''] = true;
@@ -123,36 +110,33 @@ class RegXpChef {
   }
   
   static #fromTrie(tree){
-    let source = '', count = 0;
+    let source = '', count = 0, terminalCount = 0;
+    let terminals = '';
     for (const ch in tree){
-      if (!ch ){
-        continue;
-      }
-      if (count) {
-        source += '|';
-      }
-      count++;
-      
-      source += RegXpChef.escape(ch);
-
+      if (!ch ) continue;
       const branch = tree[ch];
       const isTerminal = branch[''] === true;
       const keys = Object.keys(branch);
-      let numKeys = keys.length;
-      if (isTerminal){
-        numKeys -= 1;
-      }
-      if (!numKeys) {
+      if (keys.length === (isTerminal ? 1 : 0)) {
+        terminals += RegXpChef.escape(ch);
+        terminalCount++;
         continue;
       }
+      if (count++) source += '|';
+      source += RegXpChef.escape(ch);
       let branchSource = RegXpChef.#fromTrie(branch);
-      if (keys.length > 1) {
-        branchSource = RegXpChef.#wrap(branchSource, true);
-      }
-      if (isTerminal){
-        branchSource += '?';
-      }
+      if (keys.length > 1) branchSource = RegXpChef.#wrap(branchSource, !/^\[.+(?<!\\)\]$/.test(branchSource));
+      if (isTerminal) branchSource += '?';
       source += branchSource;
+    }
+    if (terminalCount) {
+      if (terminalCount > 1){
+        terminals = `[${terminals}]`;
+      }
+      if (source){
+        source = `|${source}`;
+      }
+      source = terminals + source;
     }
     return source;
   }
@@ -194,10 +178,8 @@ class RegXpChef {
       default:
         quantifier = min;
         if (max > min){
-          quantifier += `,`;
-          if (max !== Infinity) {
-            quantifier += max;
-          }
+          quantifier += ',';
+          if (max !== Infinity) quantifier += max;
         }
         quantifier = `{${quantifier}}`;
     }
@@ -210,35 +192,23 @@ class RegXpChef {
       pattern = RegXpChef.#toPattern(regExp, flags);
       let prefix = '(?';
       if (object[side + 'Exclusive'] === true) {
-        if (side === '$begin') {
-          prefix += '<';
-        }
+        if (side === '$begin') prefix += '<';
         prefix += '=';
       }
-      else {
-        prefix += RegXpChef.#needWrap(pattern) ? ':' : '';
-      }
+      else prefix += RegXpChef.#needWrap(pattern) ? ':' : '';
       regExp = prefix === '(?' ? pattern : `${prefix}${pattern})`;
     }
-    else {
-      regExp = '';
-    }
+    else regExp = '';
     
     if (object.$escape){
       const escapePattern = RegXpChef.#toPattern(object.$escape, flags);
       if (escapePattern === pattern){
-        if (side === '$begin'){
-          regExp = `(?<!${escapePattern})${regExp}`;
-        }
-        else
-        if (side === '$end'){
-          regExp = `${regExp}(?!${escapePattern})`;
-        }
+        if (side === '$begin') regExp = `(?<!${escapePattern})${regExp}`;
+        else 
+        if (side === '$end') regExp = `${regExp}(?!${escapePattern})`;
       }
       else 
-      if (side === '$end'){
-        regExp = `(?<!${escapePattern})${regExp}`;
-      }
+      if (side === '$end') regExp = `(?<!${escapePattern})${regExp}`;
     }
     
     return {
@@ -252,9 +222,7 @@ class RegXpChef {
     const end = RegXpChef.#getTerminal(object, flags, '$end');
 
     let content;
-    if (object.$content === undefined){
-      content = '[\\s\\S]';
-    } 
+    if (object.$content === undefined) content = '[\\s\\S]';
     else
     if (object.$content instanceof Array) {
       if (Object.keys(object).some(prop => {
@@ -264,14 +232,10 @@ class RegXpChef {
           case '$max':
             return true;
         }
-      })) {
-        throw new Error(`Invalid: $escape, $min, $max are not valid when $content is an array.`);
-      };
+      })) throw new Error(`Invalid: $escape, $min, $max are not valid when $content is an array.`);
       content = RegXpChef.#fromArray(object.$content, flags);
     }
-    else {
-      content = RegXpChef.#toPattern(object.$content, flags);
-    }
+    else content = RegXpChef.#toPattern(object.$content, flags);
 
     let endRegExp = end.regExp;
     if (end.pattern) {
@@ -281,9 +245,7 @@ class RegXpChef {
           characterClass += RegXpChef.#toPattern(object.$escape, flags);
         }
         content = `[^${characterClass}]`;
-        if (object.$escape !== object.$end){
-          endRegExp = end.pattern;
-        }
+        if (object.$escape !== object.$end) endRegExp = end.pattern;
       }
       else
       if (object.$content === undefined){
@@ -294,25 +256,22 @@ class RegXpChef {
       if (object.$escape){
         const escapePattern = RegXpChef.#toPattern(object.$escape, flags);
         const escapedEnd = `${RegXpChef.#wrap(escapePattern)}${RegXpChef.#wrap(end.pattern)}`;
-        content = RegXpChef.#wrap(`${escapedEnd}|${content}`);
+        const escapedEscape = `${RegXpChef.#wrap(escapePattern)}${RegXpChef.#wrap(escapePattern)}`;
+        content = RegXpChef.#wrap(`${escapedEnd}|${escapedEscape}|${content}`);
       }
     }
     else 
-    if (object.$escape){
-      throw new Error(`Invalid: $escape not allowed without $end.`);
-    }
+    if (object.$escape) throw new Error(`Invalid: $escape not allowed without $end.`);
 
     if (! (object.$content instanceof Array) ){
       const quantifier = RegXpChef.#getQuantifier(object);
       if (quantifier){
-        if (RegXpChef.#needWrap(content, true)){
-          content = `(?:${content})`;
-        }
+        if (RegXpChef.#needWrap(content, true)) content = `(?:${content})`;
         content += quantifier;
       }
     }
 
-    const regExp = new RegExp(`${begin.regExp}${content}${endRegExp}`, object.$flags);
+    const regExp = new RegExp(`${begin.regExp}${RegXpChef.#wrap(content)}${endRegExp}`, object.$flags);
     return RegXpChef.#toPattern(regExp, flags);
   }
   
@@ -330,14 +289,10 @@ class RegXpChef {
           if (arg instanceof RegExp){
             source = arg.source;
             const localFlags = RegXpChef.#modFlags(flags, arg);
-            if (localFlags){
-              source = `(?${localFlags}:${source})`;
-            }
+            if (localFlags) source = `(?${localFlags}:${source})`;
           }
           else
-          if (arg instanceof Array) {
-            source = RegXpChef.#fromArray(arg, flags);
-          }
+          if (arg instanceof Array) source = RegXpChef.#fromArray(arg, flags);
           else {
             const keys = Object.keys(arg);
             if (keys.every(prop => prop.startsWith('$'))) {
@@ -350,9 +305,7 @@ class RegXpChef {
                 return new RegExp(source, flags);
               }), flags);
             }
-            else {
-              throw new Error(`Invalid object - can't mix objects with $-prefixed properties and objects without $-prefixed properties: "${arg}"`);
-            }
+            else throw new Error(`Invalid object - can't mix objects with $-prefixed properties and objects without $-prefixed properties: "${arg}"`);
           }
           source = RegXpChef.#wrap(source);
           break;
@@ -366,15 +319,10 @@ class RegXpChef {
   }
   
   static groupCounts(source){
-    if (source instanceof RegExp){
-      source = source.source;
-    }
-    if (typeof source !== 'string'){
-      return;
-    }
-    const counts = Array.from(
-      source.matchAll(/(?<!\\)\(\?<(?<name>[^>]+)>/g)
-    ).reduce((acc, match) => {
+    if (source instanceof RegExp) source = source.source;
+    if (typeof source !== 'string') return;
+    const counts = Array.from( source.matchAll(/(?<!\\)\(\?<(?<name>[^>]+)>/g) )
+    .reduce((acc, match) => {
       const name = match.groups.name;
       acc[name] = acc[name] ? acc[name] + 1 : 1;
       return acc;
@@ -385,9 +333,7 @@ class RegXpChef {
   static assemble(){
     const sources = [];
     const flags = arguments[0].flags || arguments[0].$flags || '';
-    for (const arg of arguments){
-      sources.push(RegXpChef.#toPattern(arg, flags));
-    }
+    for (const arg of arguments) sources.push(RegXpChef.#toPattern(arg, flags));
     return {
       source: sources.join(''),
       flags: flags
